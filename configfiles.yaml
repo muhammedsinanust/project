@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  #namespace: ms-ns
+spec:
+  selector:
+    app: notification
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-configmap
+  #namespace: ms-ns
+data:
+  ENV_VARIABLE_KEY: "value"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: notification-secret
+  #namespace: ms-ns
+type: Opaque
+data:
+  SECRET_KEY: dmFsdWU= # base64 encoded value of "value"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-deployment
+  #namespace: ms-ns
+spec:
+  selector:
+    matchLabels:
+      app: notification
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: notification
+    spec:
+      containers:
+      - name: notification-container
+        image: team3kubectl/notification:v
+        ports:
+        - containerPort: 80
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: notification-configmap
+        - secretRef:
+            name: notification-secret
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
