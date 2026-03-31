@@ -55,7 +55,7 @@ spec:
     spec:
       containers:
       - name: notification-container
-        image: team3kubectl/notification:v1.1.1
+        image: team3kubectl/notification-service:v1.1.1
         imagePullPolicy: Always
         ports:
         - containerPort: 8006
