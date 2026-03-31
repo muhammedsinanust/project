@@ -2,42 +2,47 @@ apiVersion: v1
 kind: Service
 metadata:
   name: notification-service
-  #namespace: ms-ns
+  namespace: team3-ns
 spec:
   selector:
     app: notification
   ports:
   - port: 80
-    targetPort: 80
+    targetPort: 8006 # Corrected: Now matches containerPort
   type: ClusterIP
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: notification-configmap
-  #namespace: ms-ns
+  namespace: team3-ns
 data:
-  ENV_VARIABLE_KEY: "value"
+  PORT: "8006"
+  REDIS_HOST: notification-redis
+  REDIS_PORT: "6379"
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: notification-secret
-  #namespace: ms-ns
+  namespace: team3-ns
 type: Opaque
 data:
-  SECRET_KEY: dmFsdWU= # base64 encoded value of "value"
+  RABBITMQ_USER: Z3Vlc3Q=
+  RABBITMQ_PASSWORD: Z3Vlc3Q=
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: notification-deployment
-  #namespace: ms-ns
+  namespace: team3-ns
 spec:
   selector:
     matchLabels:
       app: notification
-  replicas: 3
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -50,10 +55,10 @@ spec:
     spec:
       containers:
       - name: notification-container
-        image: team3kubectl/notification:v
+        image: team3kubectl/notification:v1.1.1
+        imagePullPolicy: Always
         ports:
-        - containerPort: 80
-        imagePullPolicy: IfNotPresent
+        - containerPort: 8006
         envFrom:
         - configMapRef:
             name: notification-configmap
@@ -61,8 +66,8 @@ spec:
             name: notification-secret
         resources:
           requests:
-            cpu: "200m"
+            cpu: "100m"
             memory: "256Mi"
           limits:
-            cpu: "500m"
+            cpu: "200m"
             memory: "512Mi"
